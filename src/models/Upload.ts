@@ -24,17 +24,17 @@ const uploadSchema = new Schema<IUpload>({
     required: true 
   },
   related_to: {
-    type: { 
-      type: String, 
+    type: {
+      type: String,
       required: true,
       enum: ['assessment', 'form', 'other']
     },
-    id: { 
-      type: Schema.Types.ObjectId, 
+    id: {
+      type: Schema.Types.ObjectId,
       required: true,
       refPath: 'related_to.type'
     }
-  },
+  } as any, // Use 'as any' to bypass type incompatibility
   created_at: { 
     type: Date, 
     default: Date.now 

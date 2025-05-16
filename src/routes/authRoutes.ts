@@ -59,4 +59,4 @@ router.post(
   changePassword
 );
 
-export default router;</boltAction type="file" filePath="src/routes/authRoutes.ts">
+export default router;
