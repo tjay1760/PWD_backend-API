@@ -1,15 +1,16 @@
-import jwt from 'jsonwebtoken';
+import jwt, { Secret } from 'jsonwebtoken';
 import { IUser } from '../models/User';
 import { TokenType } from '../types/models';
 import AuthToken from '../models/AuthToken';
 
 // Secret keys
-const ACCESS_TOKEN_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_here';
-const REFRESH_TOKEN_SECRET = `${ACCESS_TOKEN_SECRET}_refresh`;
+const ACCESS_TOKEN_SECRET: Secret = process.env.JWT_SECRET || 'your_jwt_secret_key_here';
+const REFRESH_TOKEN_SECRET: Secret = `${ACCESS_TOKEN_SECRET}_refresh`;
+
 
 // Token expiration
-const ACCESS_TOKEN_EXPIRATION = process.env.JWT_ACCESS_EXPIRATION || '15m';
-const REFRESH_TOKEN_EXPIRATION = process.env.JWT_REFRESH_EXPIRATION || '7d';
+const ACCESS_TOKEN_EXPIRATION = ms(process.env.JWT_ACCESS_EXPIRATION || '15m') / 1000; // Convert to seconds
+const REFRESH_TOKEN_EXPIRATION = ms(process.env.JWT_REFRESH_EXPIRATION || '7d') / 1000; // Convert to seconds
 
 // Generate tokens
 export const generateAccessToken = (user: IUser): string => {
@@ -20,7 +21,7 @@ export const generateAccessToken = (user: IUser): string => {
       county: user.county
     }, 
     ACCESS_TOKEN_SECRET, 
-    { expiresIn: ACCESS_TOKEN_EXPIRATION }
+    { expiresIn: Math.floor(ACCESS_TOKEN_EXPIRATION) }
   );
 };
 
@@ -28,7 +29,7 @@ export const generateRefreshToken = (user: IUser): string => {
   return jwt.sign(
     { id: user._id }, 
     REFRESH_TOKEN_SECRET, 
-    { expiresIn: REFRESH_TOKEN_EXPIRATION }
+    { expiresIn: Math.floor(REFRESH_TOKEN_EXPIRATION) }
   );
 };
 

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { validationResult, ValidationChain } from 'express-validator';
+import { validationResult, ValidationChain, ValidationError } from 'express-validator';
 
 /**
  * Middleware to validate request input
@@ -17,10 +17,18 @@ export const validate = (validations: ValidationChain[]) => {
     }
 
     // Format validation errors
-    const formattedErrors = errors.array().map(error => ({
-      field: error.param,
-      message: error.msg
-    }));
+    const formattedErrors = errors.array().map((error: ValidationError) => {
+      if ('param' in error) {
+        return {
+          field: error.param,
+          message: error.msg
+        };
+      }
+      return {
+        field: 'unknown',
+        message: error.msg
+      };
+    });
 
     return res.status(400).json({ 
       message: 'Validation failed', 
