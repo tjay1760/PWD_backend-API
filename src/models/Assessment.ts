@@ -1,11 +1,16 @@
+// src/models/Assessment.ts (Updated)
 import mongoose, { Document, Schema } from 'mongoose';
-import { AssessmentStatus, FormType, IMedicalOfficerEntry, IDirectorReview } from '../types/models';
+import { AssessmentStatus, IMedicalOfficerEntry, IDirectorReview } from '../types/models'; // Removed FormType import
 
 export interface IAssessment extends Document {
   pwd_id: mongoose.Types.ObjectId;
   requested_by: mongoose.Types.ObjectId;
+  county: string;
+  hospital: string;
+  assessment_date: Date;
+  assessment_category: string; // NEW: To store "Initial Evaluation", "Follow-up", etc.
+  assigned_medical_officer?: mongoose.Types.ObjectId;
   status: AssessmentStatus;
-  form_type: FormType;
   medical_officer_entries: IMedicalOfficerEntry[];
   director_review?: IDirectorReview;
   created_at: Date;
@@ -13,36 +18,54 @@ export interface IAssessment extends Document {
 }
 
 const assessmentSchema = new Schema<IAssessment>({
-  pwd_id: { 
-    type: Schema.Types.ObjectId, 
-    ref: 'User', 
-    required: true 
+  pwd_id: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
-  requested_by: { 
-    type: Schema.Types.ObjectId, 
-    ref: 'User', 
-    required: true 
+  requested_by: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
-  status: { 
-    type: String, 
+  county: {
+    type: String,
+    required: true
+  },
+  hospital: {
+    type: String,
+    required: true
+  },
+  assessment_date: {
+    type: Date,
+    required: true
+  },
+  assessment_category: { // NEW SCHEMA FIELD
+    type: String,
+    required: true // This will store "Initial Evaluation", "Follow-up", etc.
+  },
+  assigned_medical_officer: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  status: {
+    type: String,
     required: true,
     enum: ['not_booked', 'pending_review', 'mo_review', 'director_review', 'approved', 'rejected'],
-    default: 'not_booked'
+    default: 'pending_review'
   },
-  form_type: { 
-    type: String, 
-    required: true,
-    enum: ['MOH-276A', 'MOH-276B', 'MOH-276C', 'MOH-276D', 'MOH-276E', 'MOH-276F', 'MOH-276G']
-  },
+  // 'form_type' is now removed from the model entirely as per the errors,
+  // with 'assessment_category' serving the purpose of the booking's assessment type.
   medical_officer_entries: [{
-    officer_id: { 
-      type: Schema.Types.ObjectId, 
-      ref: 'User', 
-      required: true 
+    officer_id: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
     },
-    form_data: { 
-      type: Schema.Types.Mixed, 
-      required: true 
+    form_data: {
+      type: Schema.Types.Mixed,
+      required: true
     },
     uploaded_reports: [{ type: String }],
     comments: { type: String },
@@ -53,32 +76,35 @@ const assessmentSchema = new Schema<IAssessment>({
     approved: { type: Boolean }
   }],
   director_review: {
-    director_id: { 
-      type: Schema.Types.ObjectId, 
-      ref: 'User' 
+    director_id: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
     },
     comments: { type: String },
     approved: { type: Boolean },
     signed_at: { type: Date }
   },
-  created_at: { 
-    type: Date, 
-    default: Date.now 
+  created_at: {
+    type: Date,
+    default: Date.now
   },
-  updated_at: { 
-    type: Date, 
-    default: Date.now 
+  updated_at: {
+    type: Date,
+    default: Date.now
   }
 }, {
-  timestamps: { 
-    createdAt: 'created_at', 
-    updatedAt: 'updated_at' 
+  timestamps: {
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
   }
 });
 
 // Indexes for performance
 assessmentSchema.index({ pwd_id: 1 });
 assessmentSchema.index({ status: 1 });
+assessmentSchema.index({ county: 1 });
+assessmentSchema.index({ hospital: 1 });
+assessmentSchema.index({ assessment_date: 1 });
 assessmentSchema.index({ 'medical_officer_entries.officer_id': 1 });
 assessmentSchema.index({ 'director_review.director_id': 1 });
 

@@ -5,6 +5,7 @@ import assessmentRoutes from './assessmentRoutes';
 import uploadRoutes from './uploadRoutes';
 import feedbackRoutes from './feedbackRoutes';
 import reportRoutes from './reportRoutes';
+import locationRoutes from './locationRoutes';
 
 const router = express.Router();
 
@@ -20,5 +21,6 @@ router.use('/assessments', assessmentRoutes);
 router.use('/files', uploadRoutes);
 router.use('/feedback', feedbackRoutes);
 router.use('/reports', reportRoutes);
+router.use('/locations/counties', locationRoutes);
 
 export default router;
