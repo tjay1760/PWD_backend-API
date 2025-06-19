@@ -210,23 +210,18 @@ export const getAssignedAssessments = async (req: Request, res: Response): Promi
     if (!officer || !officer.medical_info) {
       return res.status(404).json({ message: 'Medical officer profile not found' });
     }
-
-    if (!officer.medical_info.approved_by_director) {
-      return res.status(403).json({
-        message: 'Your account has not been approved by a county director yet'
-      });
-    }
-
+console.log("Medical officer profile found:", officer);
     const specialty = officer.medical_info.specialty;
 
-    const assessments = await Assessment.find({
-      status: 'pending_review',
-      county: county,
-    })
+    const assessments = await Assessment.find(
+      {status: "pending_review",
+        assessment_category: specialty,
+      }
+    )
       .populate('pwd_id', 'full_name gender dob county sub_county')
       .sort({ created_at: 1 });
 
-    const formattedAssessments = assessments.map(assessment => {
+const formattedAssessments = assessments.map(assessment => {
       const pwd = assessment.pwd_id as any;
       return {
         id: assessment._id,

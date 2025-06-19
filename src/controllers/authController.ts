@@ -72,10 +72,12 @@ export const register = async (req: Request, res: Response): Promise<Response> =
       role,
       password,
       nextOfKin,
-      medicalInfo,
+      medicalLicenceNumber,
+      speciality,
+      countyOfPractice,
+      medicalFacility,
       directorInfo
     } = req.body;
-
     // Check if user already exists
     const existingUser = await User.findOne({
       $or: [
@@ -125,9 +127,9 @@ export const register = async (req: Request, res: Response): Promise<Response> =
 
     if (role === 'medical_officer') {
       userData.medical_info = {
-        license_number: medicalInfo?.licenseNumber,
-        specialty: medicalInfo?.specialty,
-        county_of_practice: county,
+        license_number: medicalLicenceNumber,
+        specialty: speciality,
+        county_of_practice: countyOfPractice,
         approved_by_director: false
       };
     }
