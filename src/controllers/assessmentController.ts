@@ -202,6 +202,52 @@ const assesments = await Assessment.find()
   }
 
 }
+
+// Get all assessments by county director filter by county
+export const getAllAssessmentsByCounty = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const officerRole = req.user?.role;
+    const county = req.user?.county;
+
+    if (!officerRole || !county) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (officerRole !== 'county_director') {
+      return res.status(403).json({ message: 'Only county directors can access county assessments' });
+    }
+
+    const assessments = await Assessment.find({ county })
+      .populate('pwd_id', 'full_name gender dob county sub_county')
+      .sort({ created_at: 1 });
+
+    const formatted = assessments.map((assessment) => {
+      const pwd = assessment.pwd_id as any;
+      return {
+        id: assessment._id,
+        pwdId: pwd._id,
+        pwdName: `${pwd.full_name.first} ${pwd.full_name.middle ? pwd.full_name.middle + ' ' : ''}${pwd.full_name.last}`,
+        pwdGender: pwd.gender,
+        pwdAge: calculateAge(pwd.dob),
+        pwdCounty: pwd.county,
+        pwdSubCounty: pwd.sub_county,
+        county: assessment.county,
+        hospital: assessment.hospital,
+        assessmentDate: assessment.assessment_date,
+        assessmentCategory: assessment.assessment_category,
+        status: assessment.status,
+        createdAt: assessment.created_at,
+      };
+    });
+
+    return res.status(200).json({ assessments: formatted });
+  } catch (error) {
+    console.error('Get all assessments by county error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
 export const getAssignedAssessments = async (req: Request, res: Response): Promise<Response> => {
   try {
     const officerId = req.user?.id;

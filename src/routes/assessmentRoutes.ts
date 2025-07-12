@@ -10,7 +10,8 @@ import {
   getCountyAssessments,
   bookAssessmentValidation,
   submitAssessmentValidation,
-  reviewAssessmentValidation
+  reviewAssessmentValidation,
+  getAllAssessmentsByCounty
 } from '../controllers/assessmentController';
 import { authenticate, authorize, restrictToCounty } from '../middleware/auth';
 import { validate } from '../middleware/validation';
@@ -43,6 +44,13 @@ router.get(
   authenticate, 
   authorize(['medical_officer', 'county_director']),
   getAssignedAssessments
+);
+// Get all assessments by county (for county director)
+router.get(
+  '/county',
+  authenticate,
+  authorize(['county_director']),
+  getAllAssessmentsByCounty
 );
 
 // Submit assessment by medical officer

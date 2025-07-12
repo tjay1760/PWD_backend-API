@@ -53,6 +53,7 @@ export const authenticate = async (
       role: decoded.role,
       county: decoded.county
     };
+    console.log(`User ${req.user.id} authenticated with role ${req.user.role}`);
     next();
   } catch (error) {
     return res.status(401).json({ message: 'Invalid token' });
@@ -65,10 +66,7 @@ export const authenticate = async (
  */
 export const authorize = (roles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction): Response | void => {
-    console.log('--- Authorize middleware ---');
-    console.log('Required roles:', roles);
-    console.log('User:', req.user);
-
+ 
     if (!req.user) {
       return res.status(401).json({ message: 'Authentication required' });
     }
@@ -79,6 +77,7 @@ export const authorize = (roles: UserRole[]) => {
         message: 'You do not have permission to access this resource' 
       });
     }
+    console.log(`User ${req.user.id} with role ${req.user.role} authorized for this route`);
     next();
   };
 };
