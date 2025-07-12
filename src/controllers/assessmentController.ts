@@ -192,6 +192,16 @@ export const getAssessmentStatus = async (req: Request, res: Response): Promise<
  * View assessments assigned to a medical officer
  * @route GET /api/assessments/assigned
  */
+export const getAllAssesments=async (req:Request,res:Response)=>{
+  try{
+const officerRole = req.user?.role;
+console.log("getting assesments")
+const assesments = await Assessment.find()
+  } catch (error){
+ 
+  }
+
+}
 export const getAssignedAssessments = async (req: Request, res: Response): Promise<Response> => {
   try {
     const officerId = req.user?.id;
@@ -210,7 +220,7 @@ export const getAssignedAssessments = async (req: Request, res: Response): Promi
     if (!officer || !officer.medical_info) {
       return res.status(404).json({ message: 'Medical officer profile not found' });
     }
-console.log("Medical officer profile found:", officer);
+
     const specialty = officer.medical_info.specialty;
 
     const assessments = await Assessment.find(
@@ -225,6 +235,7 @@ const formattedAssessments = assessments.map(assessment => {
       const pwd = assessment.pwd_id as any;
       return {
         id: assessment._id,
+        pwdId: pwd._id,
         pwdName: `${pwd.full_name.first} ${pwd.full_name.middle ? pwd.full_name.middle + ' ' : ''}${pwd.full_name.last}`,
         pwdGender: pwd.gender,
         pwdAge: calculateAge(pwd.dob),
@@ -238,7 +249,6 @@ const formattedAssessments = assessments.map(assessment => {
         createdAt: assessment.created_at
       };
     });
-
     return res.status(200).json({ assessments: formattedAssessments });
   } catch (error) {
     console.error('Get assigned assessments error:', error);
@@ -302,7 +312,7 @@ export const submitAssessment = async (req: Request, res: Response): Promise<Res
     };
 
     assessment.medical_officer_entries.push(entry);
-    assessment.status = 'mo_review';
+    assessment.status = 'pending_approval';
     await assessment.save();
 
     await auditLog(`Medical officer ${officerId} submitted assessment ${assessment._id} for PWD ${assessment.pwd_id}`);
@@ -357,7 +367,7 @@ export const reviewAssessment = async (req: Request, res: Response): Promise<Res
       return res.status(404).json({ message: 'Assessment not found' });
     }
 
-    if (assessment.status !== 'mo_review') {
+    if (assessment.status !== 'pending_approval') {
       return res.status(400).json({
         message: `Cannot review assessment with status: ${assessment.status}`
       });
@@ -638,7 +648,6 @@ export const getCountyAssessments = async (req: Request, res: Response): Promise
         createdAt: assessment.created_at
       };
     });
-
     return res.status(200).json({
       county,
       total: formattedAssessments.length,

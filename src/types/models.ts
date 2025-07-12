@@ -8,7 +8,7 @@ export type UserStatus = 'active' | 'disabled';
 export type AssessmentStatus = 
   'not_booked' | 
   'pending_review' | 
-  'mo_review' | 
+  'pending_approval' | 
   'director_review' | 
   'approved' | 
   'rejected';

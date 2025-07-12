@@ -41,7 +41,7 @@ router.get(
 router.get(
   '/assigned', 
   authenticate, 
-  authorize(['medical_officer']),
+  authorize(['medical_officer', 'county_director']),
   getAssignedAssessments
 );
 

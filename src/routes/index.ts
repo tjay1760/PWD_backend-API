@@ -6,6 +6,7 @@ import uploadRoutes from './uploadRoutes';
 import feedbackRoutes from './feedbackRoutes';
 import reportRoutes from './reportRoutes';
 import locationRoutes from './locationRoutes';
+import visualImpairmentAssessmentRoutes from './visualImparementRoutes'
 
 const router = express.Router();
 
@@ -22,5 +23,7 @@ router.use('/files', uploadRoutes);
 router.use('/feedback', feedbackRoutes);
 router.use('/reports', reportRoutes);
 router.use('/locations/counties', locationRoutes);
+router.use('/visual-impairments', visualImpairmentAssessmentRoutes);
+
 
 export default router;

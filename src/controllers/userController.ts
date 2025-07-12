@@ -25,7 +25,6 @@ export const updateProfileValidation = [
 export const getCurrentUser = async (req: Request, res: Response): Promise<Response> => {
   try {
     const userId = req.user?.id;
-
     if (!userId) {
       return res.status(401).json({ message: 'Authentication required' });
     }
@@ -148,11 +147,10 @@ export const updateProfile = async (req: Request, res: Response): Promise<Respon
  */
 export const getUserById = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const { userId } = req.params;
-
+    const userId = req.user?.id;
     // Validate MongoDB ID
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: 'Invalid user ID' });
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+          return res.status(400).json({ message: 'Invalid user ID' });
     }
 
     // Find user excluding password hash
@@ -160,10 +158,14 @@ export const getUserById = async (req: Request, res: Response): Promise<Response
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
     // Restrict sensitive information based on role
     const userResponse = {
       id: user._id,
+      email: user.contact.email, // Always include email for admin and county director
+      phone: user.contact.phone, // Always include phone for admin and county director
+      nationalId: user.national_id_or_passport, // Always include for admin and county
+      dob: user.dob, // Always include for admin and county director
+      maritalStatus: user.marital_status, // Always include for admin and county director
       fullName: `${user.full_name.first} ${user.full_name.middle ? user.full_name.middle + ' ' : ''}${user.full_name.last}`,
       gender: user.gender,
       county: user.county,
@@ -201,7 +203,7 @@ export const getUserById = async (req: Request, res: Response): Promise<Response
         });
       }
     }
-
+console.log(userResponse)
     return res.status(200).json({ user: userResponse });
   } catch (error) {
     console.error('Get user by ID error:', error);
@@ -237,7 +239,7 @@ export const registerPWD = async (req: Request, res: Response): Promise<Response
       lastName,
       birthCertificateNumber,
       gender,
-      dob,
+      dateOfBirth,
       educationDetails,
       disability
     } = req.body;
@@ -254,8 +256,9 @@ export const registerPWD = async (req: Request, res: Response): Promise<Response
         last: lastName
       },
       birth_certificate_number: birthCertificateNumber,
+      national_id_or_passport: birthCertificateNumber, // Use guardian's ID
       gender,
-      dob: new Date(dob),
+      dob: new Date(dateOfBirth),
       contact: {
         email: `pwd_${Date.now()}@placeholder.com`, // Placeholder email
         phone: guardian.contact.phone // Use guardian's phone
@@ -344,6 +347,34 @@ export const getGuardianPWDs = async (req: Request, res: Response): Promise<Resp
  * Approve a medical officer (for county directors)
  * @route PUT /api/users/approve/:officerId
  */
+
+// Get all medical officers
+export const getAllMedicalOfficers = async (req: Request, res: Response): Promise<Response> => {
+ 
+  try {
+    const directorId = req.user?.id;
+    const directorRole = req.user?.role;
+    if (!directorId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (directorRole !== 'county_director') {
+      return res.status(403).json({ message: 'Only county directors can access this endpoint' });
+    }
+
+    // Find all medical officers in the director's county
+    const medicalOfficers = await User.find({
+      role: 'medical_officer',
+      'medical_info.county_of_practice': req.user?.county
+    });
+
+    return res.status(200).json({ medicalOfficers });
+  } catch (error) {
+    console.error('Get all medical officers error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
 export const approveMedicalOfficer = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { officerId } = req.params;

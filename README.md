@@ -80,7 +80,7 @@ npm run dev
 - `GET /api/users/me` - Get current user profile
 - `PUT /api/users/update-profile` - Update user profile
 - `GET /api/users/:userId` - Get user by ID
-- `POST /api/pwds/register` - Register a PWD (guardians only)
+- `POST /api/users/pwds/register` - Register a PWD (guardians only)
 - `GET /api/guardians/my-pwds` - Get PWDs for a guardian
 - `PUT /api/users/approve/:officerId` - Approve medical officer
 - `PUT /api/users/manage/:userId` - Enable/disable a user (admin only)

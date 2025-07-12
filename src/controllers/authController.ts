@@ -28,7 +28,7 @@ export const registerValidation = [
   body('county').notEmpty().withMessage('County is required'),
   body('subCounty').notEmpty().withMessage('Sub-county is required'),
   body('role')
-    .isIn(['pwd', 'guardian', 'medical_officer', 'county_director', 'admin'])
+    .isIn(['pwd', 'guardian', 'medical_officer', 'county_director','medical_approver', 'admin'])
     .withMessage('Invalid role')
 ];
 

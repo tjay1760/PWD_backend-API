@@ -79,7 +79,7 @@ const userSchema = new Schema<IUser>({
   role: { 
     type: String, 
     required: true,
-    enum: ['pwd', 'guardian', 'medical_officer', 'county_director', 'admin']
+    enum: ['pwd', 'guardian', 'medical_officer', 'county_director','medical_approver', 'admin']
   },
   password_hash: { type: String, required: true },
   next_of_kin: {

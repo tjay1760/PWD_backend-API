@@ -52,7 +52,7 @@ const assessmentSchema = new Schema<IAssessment>({
   status: {
     type: String,
     required: true,
-    enum: ['not_booked', 'pending_review', 'mo_review', 'director_review', 'approved', 'rejected'],
+    enum: ['not_booked', 'pending_review', 'pending_approval', 'director_review', 'approved', 'rejected'],
     default: 'pending_review'
   },
   // 'form_type' is now removed from the model entirely as per the errors,
