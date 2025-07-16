@@ -10,7 +10,8 @@ import {
   getCountyAssessments,
   bookAssessmentValidation,
   submitAssessmentValidation,
-  reviewAssessmentValidation
+  reviewAssessmentValidation,
+  updateFormDataValidation
 } from '../controllers/assessmentController';
 import { authenticate, authorize, restrictToCounty } from '../middleware/auth';
 import { validate } from '../middleware/validation';
@@ -65,6 +66,15 @@ router.put(
   reviewAssessment
 );
 
+// Update assessment form data during review
+router.put(
+  '/update-form/:assessmentId', 
+  authenticate, 
+  authorize(['medical_officer']), 
+  validate(updateFormDataValidation), 
+  auditLog('update_assessment_form'),
+  updateAssessmentFormData
+);
 // Finalize assessment by county director
 router.put(
   '/finalize/:assessmentId', 

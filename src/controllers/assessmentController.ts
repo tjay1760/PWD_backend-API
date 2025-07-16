@@ -23,7 +23,9 @@ export const submitAssessmentValidation = [
 
 export const reviewAssessmentValidation = [
   body('approved').isBoolean().withMessage('Approval status is required'),
-  body('comments').optional().isString()
+  body('comments').optional().isString(),
+  body('formData').optional().isObject().withMessage('Form data must be an object'),
+  body('uploadedReports').optional().isArray().withMessage('Uploaded reports must be an array')
 ];
 
 /**
@@ -311,7 +313,7 @@ export const submitAssessment = async (req: Request, res: Response): Promise<Res
 export const reviewAssessment = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { assessmentId } = req.params;
-    const { approved, comments } = req.body;
+    const { approved, comments, formData, uploadedReports } = req.body;
     const officerId = req.user?.id;
     const officerRole = req.user?.role;
 
@@ -367,6 +369,18 @@ export const reviewAssessment = async (req: Request, res: Response): Promise<Res
     assessment.medical_officer_entries[entryIndex].review_comments = comments;
     assessment.medical_officer_entries[entryIndex].approved = approved;
 
+    // Update form data if provided
+    if (formData) {
+      assessment.medical_officer_entries[entryIndex].form_data = {
+        ...assessment.medical_officer_entries[entryIndex].form_data,
+        ...formData
+      };
+    }
+
+    // Update uploaded reports if provided
+    if (uploadedReports) {
+      assessment.medical_officer_entries[entryIndex].uploaded_reports = uploadedReports;
+    }
     // Update assessment status
     assessment.status = 'director_review';
     await assessment.save();
@@ -375,7 +389,9 @@ export const reviewAssessment = async (req: Request, res: Response): Promise<Res
       message: 'Assessment reviewed successfully',
       assessmentId: assessment._id,
       status: assessment.status,
-      approved
+      approved,
+      updatedFormData: formData ? true : false,
+      updatedReports: uploadedReports ? true : false
     });
   } catch (error) {
     console.error('Review assessment error:', error);
