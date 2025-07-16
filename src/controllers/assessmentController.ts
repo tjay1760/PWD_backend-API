@@ -28,6 +28,11 @@ export const reviewAssessmentValidation = [
   body('uploadedReports').optional().isArray().withMessage('Uploaded reports must be an array')
 ];
 
+export const updateFormDataValidation = [
+  body('formData').isObject().withMessage('Form data is required'),
+  body('comments').optional().isString()
+];
+
 /**
  * Book a medical assessment
  * @route POST /api/assessments/book
@@ -396,6 +401,92 @@ export const reviewAssessment = async (req: Request, res: Response): Promise<Res
   } catch (error) {
     console.error('Review assessment error:', error);
     return res.status(500).json({ message: 'Server error during assessment review' });
+  }
+};
+
+/**
+ * Update assessment form data by medical officer
+ * @route PUT /api/assessments/update-form/:assessmentId
+ */
+export const updateAssessmentFormData = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { assessmentId } = req.params;
+    const { formData, comments } = req.body;
+    const officerId = req.user?.id;
+    const officerRole = req.user?.role;
+
+    if (!officerId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (officerRole !== 'medical_officer') {
+      return res.status(403).json({ message: 'Only medical officers can update form data' });
+    }
+
+    // Validate MongoDB ID
+    if (!mongoose.Types.ObjectId.isValid(assessmentId)) {
+      return res.status(400).json({ message: 'Invalid assessment ID' });
+    }
+
+    // Get medical officer details
+    const officer = await User.findById(officerId);
+    if (!officer || !officer.medical_info) {
+      return res.status(404).json({ message: 'Medical officer profile not found' });
+    }
+
+    // Check if officer is approved
+    if (!officer.medical_info.approved_by_director) {
+      return res.status(403).json({ 
+        message: 'Your account has not been approved by a county director yet' 
+      });
+    }
+
+    // Find assessment
+    const assessment = await Assessment.findById(assessmentId);
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found' });
+    }
+
+    // Check assessment status - allow updates for mo_review and director_review
+    if (!['mo_review', 'director_review'].includes(assessment.status)) {
+      return res.status(400).json({ 
+        message: `Cannot update form data for assessment with status: ${assessment.status}` 
+      });
+    }
+
+    // Find the officer's entry
+    const entryIndex = assessment.medical_officer_entries.findIndex(
+      entry => entry.officer_id.toString() === officerId
+    );
+
+    if (entryIndex === -1) {
+      return res.status(404).json({ message: 'No entry found for this officer' });
+    }
+
+    // Update form data
+    assessment.medical_officer_entries[entryIndex].form_data = {
+      ...assessment.medical_officer_entries[entryIndex].form_data,
+      ...formData
+    };
+
+    // Add update comments if provided
+    if (comments) {
+      assessment.medical_officer_entries[entryIndex].update_comments = comments;
+    }
+
+    // Mark as updated
+    assessment.medical_officer_entries[entryIndex].last_updated = new Date();
+    
+    await assessment.save();
+
+    return res.status(200).json({
+      message: 'Form data updated successfully',
+      assessmentId: assessment._id,
+      updatedAt: assessment.medical_officer_entries[entryIndex].last_updated
+    });
+  } catch (error) {
+    console.error('Update assessment form data error:', error);
+    return res.status(500).json({ message: 'Server error during form data update' });
   }
 };
 
