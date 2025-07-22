@@ -2,6 +2,7 @@ import express from 'express';
 import authRoutes from './authRoutes';
 import userRoutes from './userRoutes';
 import assessmentRoutes from './assessmentRoutes';
+import assessmentStatsRoutes from './assessmentStatsRoutes';
 import uploadRoutes from './uploadRoutes';
 import feedbackRoutes from './feedbackRoutes';
 import reportRoutes from './reportRoutes';
@@ -17,6 +18,7 @@ router.get('/health', (req, res) => {
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/assessments', assessmentRoutes);
+router.use('/assessments', assessmentStatsRoutes);
 router.use('/files', uploadRoutes);
 router.use('/feedback', feedbackRoutes);
 router.use('/reports', reportRoutes);

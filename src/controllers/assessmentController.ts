@@ -390,6 +390,14 @@ export const reviewAssessment = async (req: Request, res: Response): Promise<Res
     assessment.status = 'director_review';
     await assessment.save();
 
+    // Update medical officer's reviewed count
+    await User.findByIdAndUpdate(
+      officerId,
+      {
+        $inc: { 'assessment_stats.reviewed_count': 1 },
+        $set: { 'assessment_stats.last_activity': new Date() }
+      }
+    );
     return res.status(200).json({
       message: 'Assessment reviewed successfully',
       assessmentId: assessment._id,
@@ -549,6 +557,16 @@ export const finalizeAssessment = async (req: Request, res: Response): Promise<R
     assessment.status = approved ? 'approved' : 'rejected';
     await assessment.save();
 
+    // Update director's completed count if approved
+    if (approved) {
+      await User.findByIdAndUpdate(
+        directorId,
+        {
+          $inc: { 'assessment_stats.completed_count': 1 },
+          $set: { 'assessment_stats.last_activity': new Date() }
+        }
+      );
+    }
     return res.status(200).json({
       message: `Assessment ${approved ? 'approved' : 'rejected'} successfully`,
       assessmentId: assessment._id,

@@ -29,6 +29,11 @@ export interface IUser extends Document {
   medical_info?: IMedicalInfo;
   director_info?: IDirectorInfo;
   system_admin_info?: ISystemAdminInfo;
+  assessment_stats?: {
+    reviewed_count: number;
+    completed_count: number;
+    last_activity: Date;
+  };
   status: UserStatus;
   created_at: Date;
   updated_at: Date;
@@ -105,6 +110,20 @@ const userSchema = new Schema<IUser>({
   },
   system_admin_info: {
     permissions: [{ type: String }]
+  },
+  assessment_stats: {
+    reviewed_count: { 
+      type: Number, 
+      default: 0 
+    },
+    completed_count: { 
+      type: Number, 
+      default: 0 
+    },
+    last_activity: { 
+      type: Date, 
+      default: Date.now 
+    }
   },
   status: { 
     type: String, 

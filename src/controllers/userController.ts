@@ -55,6 +55,7 @@ export const getCurrentUser = async (req: Request, res: Response): Promise<Respo
         guardianFor: user.guardian_for,
         medicalInfo: user.medical_info,
         directorInfo: user.director_info,
+        assessmentStats: user.assessment_stats,
         status: user.status,
         createdAt: user.created_at
       }
@@ -163,6 +164,13 @@ export const getUserById = async (req: Request, res: Response): Promise<Response
 
     // Restrict sensitive information based on role
     const userResponse = {
+
+          // Add assessment stats for medical officers and directors
+          if (user.role === 'medical_officer' || user.role === 'county_director') {
+            Object.assign(userResponse, {
+              assessmentStats: user.assessment_stats
+            });
+          }
       id: user._id,
       fullName: `${user.full_name.first} ${user.full_name.middle ? user.full_name.middle + ' ' : ''}${user.full_name.last}`,
       gender: user.gender,

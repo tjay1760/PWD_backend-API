@@ -55,6 +55,13 @@ export interface ISystemAdminInfo {
   permissions: string[];
 }
 
+// Assessment Statistics interface
+export interface IAssessmentStats {
+  reviewed_count: number;
+  completed_count: number;
+  last_activity: Date;
+}
+
 // Medical Officer Entry interface
 export interface IMedicalOfficerEntry {
   officer_id: string;
