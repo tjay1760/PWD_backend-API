@@ -1,5 +1,5 @@
 // User role types
-export type UserRole = 'pwd' | 'guardian' | 'medical_officer' | 'county_director' | 'admin';
+export type UserRole = 'pwd' | 'guardian' | 'medical_officer' | 'medical_approver' | 'county_director' | 'admin';
 
 // User status
 export type UserStatus = 'active' | 'disabled';
@@ -8,7 +8,7 @@ export type UserStatus = 'active' | 'disabled';
 export type AssessmentStatus = 
   'not_booked' | 
   'pending_review' | 
-  'mo_review' | 
+  'pending_approval' | 
   'director_review' | 
   'approved' | 
   'rejected';

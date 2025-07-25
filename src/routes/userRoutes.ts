@@ -8,7 +8,9 @@ import {
   approveMedicalOfficer,
   manageUser,
   assignRole,
-  updateProfileValidation
+  updateProfileValidation,
+  getAllMedicalOfficers,
+  
 } from '../controllers/userController';
 import { authenticate, authorize, restrictToCounty } from '../middleware/auth';
 import { validate } from '../middleware/validation';
@@ -33,13 +35,6 @@ router.put(
   updateProfile
 );
 
-// Get user by ID
-router.get(
-  '/:userId', 
-  authenticate, 
-  restrictToCounty,
-  getUserById
-);
 
 // Register a PWD by guardian
 router.post(
@@ -56,6 +51,13 @@ router.get(
   authenticate, 
   authorize(['guardian']),
   getGuardianPWDs
+);
+// Get all medical officers with 
+router.get(
+  '/medical-officers',
+  authenticate,
+  authorize(['county_director']),
+  getAllMedicalOfficers
 );
 
 // Approve a medical officer (for county directors)
@@ -85,5 +87,12 @@ router.put(
   auditLog('assign_role'),
   assignRole
 );
+// Get user by ID
+router.get(
+  '/:userId', 
+  authenticate, 
+  getUserById
+);
+
 
 export default router;

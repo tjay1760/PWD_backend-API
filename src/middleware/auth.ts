@@ -26,6 +26,7 @@ export const authenticate = async (
 ): Promise<void | Response> => {
   try {
     // Get token from Authorization header
+   
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ message: 'Authentication required' });
@@ -41,6 +42,7 @@ export const authenticate = async (
     
     // Check if user still exists and is active
     const user = await User.findById(decoded.id).select('-password_hash');
+   
     if (!user || user.status !== 'active') {
       return res.status(401).json({ message: 'User not found or inactive' });
     }
@@ -51,7 +53,7 @@ export const authenticate = async (
       role: decoded.role,
       county: decoded.county
     };
-
+    console.log(`User ${req.user.id} authenticated with role ${req.user.role}`);
     next();
   } catch (error) {
     return res.status(401).json({ message: 'Invalid token' });
@@ -64,19 +66,22 @@ export const authenticate = async (
  */
 export const authorize = (roles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction): Response | void => {
+ 
     if (!req.user) {
       return res.status(401).json({ message: 'Authentication required' });
     }
 
     if (!roles.includes(req.user.role)) {
+      console.warn(`Unauthorized access attempt by user ${req.user.id} with role ${req.user.role}`);
       return res.status(403).json({ 
         message: 'You do not have permission to access this resource' 
       });
     }
-
+    console.log(`User ${req.user.id} with role ${req.user.role} authorized for this route`);
     next();
   };
 };
+
 
 /**
  * Middleware to restrict access to users in the same county
@@ -88,6 +93,7 @@ export const restrictToCounty = async (
   next: NextFunction
 ): Promise<void | Response> => {
   try {
+    console.log(`Checking county access for user ${req.user?.id}`);
     if (!req.user) {
       return res.status(401).json({ message: 'Authentication required' });
     }
