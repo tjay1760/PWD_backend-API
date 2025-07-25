@@ -25,6 +25,13 @@ export const submitAssessmentValidation = [
 
 export const reviewAssessmentValidation = [
   body('approved').isBoolean().withMessage('Approval status is required'),
+  body('comments').optional().isString(),
+  body('formData').optional().isObject().withMessage('Form data must be an object'),
+  body('uploadedReports').optional().isArray().withMessage('Uploaded reports must be an array')
+];
+
+export const updateFormDataValidation = [
+  body('formData').isObject().withMessage('Form data is required'),
   body('comments').optional().isString()
 ];
 
@@ -427,7 +434,9 @@ export const submitAssessment = async (req: Request, res: Response): Promise<Res
 export const reviewAssessment = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { assessmentId } = req.params;
+
     const { approved, comments, formData } = req.body;
+
     const officerId = req.user?.id;
     const officerRole = req.user?.role;
 
@@ -478,20 +487,135 @@ export const reviewAssessment = async (req: Request, res: Response): Promise<Res
     assessment.medical_officer_entries[0].approved = approved;
     assessment.medical_officer_entries[0].form_data = formData || {};
 
+
     assessment.status = 'director_review';
     await assessment.save();
 
     await auditLog(`Medical officer ${officerId} reviewed assessment ${assessment._id} for PWD ${assessment.pwd_id} (Approved: ${approved})`);
 
+
+    // Update form data if provided
+    if (formData) {
+      assessment.medical_officer_entries[entryIndex].form_data = {
+        ...assessment.medical_officer_entries[entryIndex].form_data,
+        ...formData
+      };
+    }
+
+    // Update uploaded reports if provided
+    if (uploadedReports) {
+      assessment.medical_officer_entries[entryIndex].uploaded_reports = uploadedReports;
+    }
+    // Update assessment status
+    assessment.status = 'director_review';
+    await assessment.save();
+
+    // Update medical officer's reviewed count
+    await User.findByIdAndUpdate(
+      officerId,
+      {
+        $inc: { 'assessment_stats.reviewed_count': 1 },
+        $set: { 'assessment_stats.last_activity': new Date() }
+      }
+    );
+
     return res.status(200).json({
       message: 'Assessment reviewed successfully',
       assessmentId: assessment._id,
       status: assessment.status,
-      approved
+      approved,
+      updatedFormData: formData ? true : false,
+      updatedReports: uploadedReports ? true : false
     });
   } catch (error) {
     console.error('Review assessment error:', error);
     return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+/**
+ * Update assessment form data by medical officer
+ * @route PUT /api/assessments/update-form/:assessmentId
+ */
+export const updateAssessmentFormData = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const { assessmentId } = req.params;
+    const { formData, comments } = req.body;
+    const officerId = req.user?.id;
+    const officerRole = req.user?.role;
+
+    if (!officerId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (officerRole !== 'medical_officer') {
+      return res.status(403).json({ message: 'Only medical officers can update form data' });
+    }
+
+    // Validate MongoDB ID
+    if (!mongoose.Types.ObjectId.isValid(assessmentId)) {
+      return res.status(400).json({ message: 'Invalid assessment ID' });
+    }
+
+    // Get medical officer details
+    const officer = await User.findById(officerId);
+    if (!officer || !officer.medical_info) {
+      return res.status(404).json({ message: 'Medical officer profile not found' });
+    }
+
+    // Check if officer is approved
+    if (!officer.medical_info.approved_by_director) {
+      return res.status(403).json({ 
+        message: 'Your account has not been approved by a county director yet' 
+      });
+    }
+
+    // Find assessment
+    const assessment = await Assessment.findById(assessmentId);
+    if (!assessment) {
+      return res.status(404).json({ message: 'Assessment not found' });
+    }
+
+    // Check assessment status - allow updates for mo_review and director_review
+    if (!['mo_review', 'director_review'].includes(assessment.status)) {
+      return res.status(400).json({ 
+        message: `Cannot update form data for assessment with status: ${assessment.status}` 
+      });
+    }
+
+    // Find the officer's entry
+    const entryIndex = assessment.medical_officer_entries.findIndex(
+      entry => entry.officer_id.toString() === officerId
+    );
+
+    if (entryIndex === -1) {
+      return res.status(404).json({ message: 'No entry found for this officer' });
+    }
+
+    // Update form data
+    assessment.medical_officer_entries[entryIndex].form_data = {
+      ...assessment.medical_officer_entries[entryIndex].form_data,
+      ...formData
+    };
+
+    // Add update comments if provided
+    if (comments) {
+      assessment.medical_officer_entries[entryIndex].update_comments = comments;
+    }
+
+    // Mark as updated
+    assessment.medical_officer_entries[entryIndex].last_updated = new Date();
+    
+    await assessment.save();
+
+    return res.status(200).json({
+      message: 'Form data updated successfully',
+      assessmentId: assessment._id,
+      updatedAt: assessment.medical_officer_entries[entryIndex].last_updated
+    });
+  } catch (error) {
+    console.error('Update assessment form data error:', error);
+    return res.status(500).json({ message: 'Server error during form data update' });
   }
 };
 
@@ -549,6 +673,18 @@ export const finalizeAssessment = async (req: Request, res: Response): Promise<R
     await assessment.save();
 
     await auditLog(`Director ${directorId} ${approved ? 'approved' : 'rejected'} assessment ${assessment._id} for PWD ${assessment.pwd_id}`);
+
+
+    // Update director's completed count if approved
+    if (approved) {
+      await User.findByIdAndUpdate(
+        directorId,
+        {
+          $inc: { 'assessment_stats.completed_count': 1 },
+          $set: { 'assessment_stats.last_activity': new Date() }
+        }
+      );
+    }
 
     return res.status(200).json({
       message: `Assessment ${approved ? 'approved' : 'rejected'} successfully`,

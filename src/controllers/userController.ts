@@ -71,6 +71,7 @@ export const getCurrentUser = async (
         guardianFor: user.guardian_for,
         medicalInfo: user.medical_info,
         directorInfo: user.director_info,
+        assessmentStats: user.assessment_stats,
         status: user.status,
         createdAt: user.created_at,
       },
@@ -190,6 +191,13 @@ export const getUserById = async (
     }
     // Restrict sensitive information based on role
     const userResponse = {
+
+          // Add assessment stats for medical officers and directors
+          if (user.role === 'medical_officer' || user.role === 'county_director') {
+            Object.assign(userResponse, {
+              assessmentStats: user.assessment_stats
+            });
+          }
       id: user._id,
       email: user.contact.email, // Always include email for admin and county director
       phone: user.contact.phone, // Always include phone for admin and county director
