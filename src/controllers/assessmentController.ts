@@ -122,6 +122,7 @@ export const bookAssessment = async (req: Request, res: Response): Promise<Respo
  */
 export const getAssessmentStatus = async (req: Request, res: Response): Promise<Response> => {
   try {
+    console.log("********getting assessment status");
     const { pwdId } = req.params;
     const userId = req.user?.id;
     const userRole = req.user?.role;
@@ -243,6 +244,51 @@ export const getAllAssessmentsByCounty = async (req: Request, res: Response): Pr
     return res.status(200).json({ assessments: formatted });
   } catch (error) {
     console.error('Get all assessments by county error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Get all Assesments pending approval by medical approver
+export const getPendingApprovals = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const officerRole = req.user?.role;
+    const officerId = req.user?.id;
+
+    if (!officerRole || !officerId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (officerRole !== 'medical_approver') {
+      return res.status(403).json({ message: 'Only medical approvers can access pending approvals' });
+    }
+
+    const assessments = await Assessment.find({ status: 'pending_approval' })
+      .populate('pwd_id', 'full_name gender dob county sub_county')
+      .sort({ created_at: 1 });
+
+    const formatted = assessments.map((assessment) => {
+      const pwd = assessment.pwd_id as any;
+      return {
+        id: assessment._id,
+        pwdId: pwd._id,
+        pwdName: `${pwd.full_name.first} ${pwd.full_name.middle ? pwd.full_name.middle + ' ' : ''}${pwd.full_name.last}`,
+        pwdGender: pwd.gender,
+        pwdAge: calculateAge(pwd.dob),
+        pwdCounty: pwd.county,
+        pwdSubCounty: pwd.sub_county,
+        county: assessment.county,
+        hospital: assessment.hospital,
+        assessmentDate: assessment.assessment_date,
+        assessmentCategory: assessment.assessment_category,
+        formData: assessment.medical_officer_entries[0]?.form_data || {},
+        status: assessment.status,
+        createdAt: assessment.created_at,
+      };
+    });
+
+    return res.status(200).json({ assessments: formatted });
+  } catch (error) {
+    console.error('Get pending approvals error:', error);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -381,7 +427,7 @@ export const submitAssessment = async (req: Request, res: Response): Promise<Res
 export const reviewAssessment = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { assessmentId } = req.params;
-    const { approved, comments } = req.body;
+    const { approved, comments, formData } = req.body;
     const officerId = req.user?.id;
     const officerRole = req.user?.role;
 
@@ -389,8 +435,8 @@ export const reviewAssessment = async (req: Request, res: Response): Promise<Res
       return res.status(401).json({ message: 'Authentication required' });
     }
 
-    if (officerRole !== 'medical_officer') {
-      return res.status(403).json({ message: 'Only medical officers can review assessments' });
+    if (officerRole !== 'medical_approver') {
+      return res.status(403).json({ message: 'Only medical approvers can review assessments' });
     }
 
     if (!mongoose.Types.ObjectId.isValid(assessmentId)) {
@@ -402,11 +448,11 @@ export const reviewAssessment = async (req: Request, res: Response): Promise<Res
       return res.status(404).json({ message: 'Medical officer profile not found' });
     }
 
-    if (!officer.medical_info.approved_by_director) {
-      return res.status(403).json({
-        message: 'Your account has not been approved by a county director yet'
-      });
-    }
+    // if (!officer.medical_info.approved_by_director) {
+    //   return res.status(403).json({
+    //     message: 'Your account has not been approved by a county director yet'
+    //   });
+    // }
 
     const assessment = await Assessment.findById(assessmentId);
     if (!assessment) {
@@ -419,17 +465,18 @@ export const reviewAssessment = async (req: Request, res: Response): Promise<Res
       });
     }
 
-    const entryIndex = assessment.medical_officer_entries.findIndex(
-      entry => entry.officer_id.toString() === officerId && !entry.reviewed
-    );
+    // const entryIndex = assessment.medical_officer_entries.findIndex(
+    //   entry => entry.officer_id.toString() === officerId && !entry.reviewed
+    // );
 
-    if (entryIndex === -1) {
-      return res.status(404).json({ message: 'No eligible entry found for review' });
-    }
+    // if (entryIndex === -1) {
+    //   return res.status(404).json({ message: 'No eligible entry found for review' });
+    // }
 
-    assessment.medical_officer_entries[entryIndex].reviewed = true;
-    assessment.medical_officer_entries[entryIndex].review_comments = comments;
-    assessment.medical_officer_entries[entryIndex].approved = approved;
+    assessment.medical_officer_entries[0].reviewed = true;
+    assessment.medical_officer_entries[0].review_comments = comments;
+    assessment.medical_officer_entries[0].approved = approved;
+    assessment.medical_officer_entries[0].form_data = formData || {};
 
     assessment.status = 'director_review';
     await assessment.save();
@@ -455,7 +502,7 @@ export const reviewAssessment = async (req: Request, res: Response): Promise<Res
 export const finalizeAssessment = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { assessmentId } = req.params;
-    const { approved, comments } = req.body;
+    const { approved, comments, finalized } = req.body;
     const directorId = req.user?.id;
     const directorRole = req.user?.role;
 

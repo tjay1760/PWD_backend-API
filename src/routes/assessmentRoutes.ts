@@ -11,7 +11,8 @@ import {
   bookAssessmentValidation,
   submitAssessmentValidation,
   reviewAssessmentValidation,
-  getAllAssessmentsByCounty
+  getAllAssessmentsByCounty,
+  getPendingApprovals
 } from '../controllers/assessmentController';
 import { authenticate, authorize, restrictToCounty } from '../middleware/auth';
 import { validate } from '../middleware/validation';
@@ -33,7 +34,11 @@ router.post(
 // View assessment status for a PWD
 router.get(
   '/status/:pwdId', 
-  authenticate, 
+  authenticate,
+   (req, res, next) => {
+    console.log(`User ${req.user?.id} accessing assessment status`);
+    next();
+  },
   restrictToCounty,
   getAssessmentStatus
 );
@@ -45,6 +50,14 @@ router.get(
   authorize(['medical_officer', 'county_director']),
   getAssignedAssessments
 );
+
+router.get(
+  '/pending-approvals',
+  authenticate,
+  authorize(['medical_approver']),
+  getPendingApprovals
+);
+
 // Get all assessments by county (for county director)
 router.get(
   '/county',
@@ -67,11 +80,12 @@ router.post(
 router.put(
   '/review/:assessmentId', 
   authenticate, 
-  authorize(['medical_officer']), 
+  authorize(['medical_approver']), 
   validate(reviewAssessmentValidation), 
   auditLog('review_assessment'),
   reviewAssessment
 );
+
 
 // Finalize assessment by county director
 router.put(

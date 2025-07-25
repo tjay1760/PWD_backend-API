@@ -1,5 +1,5 @@
 // User role types
-export type UserRole = 'pwd' | 'guardian' | 'medical_officer' | 'county_director' | 'admin';
+export type UserRole = 'pwd' | 'guardian' | 'medical_officer' | 'medical_approver' | 'county_director' | 'admin';
 
 // User status
 export type UserStatus = 'active' | 'disabled';

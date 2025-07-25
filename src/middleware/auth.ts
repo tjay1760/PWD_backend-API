@@ -93,6 +93,7 @@ export const restrictToCounty = async (
   next: NextFunction
 ): Promise<void | Response> => {
   try {
+    console.log(`Checking county access for user ${req.user?.id}`);
     if (!req.user) {
       return res.status(401).json({ message: 'Authentication required' });
     }

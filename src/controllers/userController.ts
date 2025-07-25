@@ -176,8 +176,9 @@ export const getUserById = async (
   res: Response
 ): Promise<Response> => {
   try {
-    const userId = req.user?.id;
+    const userId = req.params?.userId;
     // Validate MongoDB ID
+    
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: "Invalid user ID" });
     }
@@ -456,7 +457,7 @@ export const approveMedicalOfficer = async (
     }
 
     // Ensure officer is in the same county as director
-    if (medicalOfficer.medical_info?.county_of_practice !== directorCounty) {
+    if (medicalOfficer.county !== directorCounty) {
       return res
         .status(403)
         .json({
