@@ -33,6 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+// src/models/Assessment.ts (Updated)
 const mongoose_1 = __importStar(require("mongoose"));
 const assessmentSchema = new mongoose_1.Schema({
     pwd_id: {
@@ -45,17 +46,35 @@ const assessmentSchema = new mongoose_1.Schema({
         ref: 'User',
         required: true
     },
+    county: {
+        type: String,
+        required: true
+    },
+    hospital: {
+        type: String,
+        required: true
+    },
+    assessment_date: {
+        type: Date,
+        required: true
+    },
+    assessment_category: {
+        type: String,
+        required: true // This will store "Initial Evaluation", "Follow-up", etc.
+    },
+    assigned_medical_officer: {
+        type: mongoose_1.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+    },
     status: {
         type: String,
         required: true,
-        enum: ['not_booked', 'pending_review', 'mo_review', 'director_review', 'approved', 'rejected'],
-        default: 'not_booked'
+        enum: ['not_booked', 'pending_review', 'pending_approval', 'director_review', 'approved', 'rejected'],
+        default: 'pending_review'
     },
-    form_type: {
-        type: String,
-        required: true,
-        enum: ['MOH-276A', 'MOH-276B', 'MOH-276C', 'MOH-276D', 'MOH-276E', 'MOH-276F', 'MOH-276G']
-    },
+    // 'form_type' is now removed from the model entirely as per the errors,
+    // with 'assessment_category' serving the purpose of the booking's assessment type.
     medical_officer_entries: [{
             officer_id: {
                 type: mongoose_1.Schema.Types.ObjectId,
@@ -100,6 +119,9 @@ const assessmentSchema = new mongoose_1.Schema({
 // Indexes for performance
 assessmentSchema.index({ pwd_id: 1 });
 assessmentSchema.index({ status: 1 });
+assessmentSchema.index({ county: 1 });
+assessmentSchema.index({ hospital: 1 });
+assessmentSchema.index({ assessment_date: 1 });
 assessmentSchema.index({ 'medical_officer_entries.officer_id': 1 });
 assessmentSchema.index({ 'director_review.director_id': 1 });
 exports.default = mongoose_1.default.model('Assessment', assessmentSchema);

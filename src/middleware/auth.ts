@@ -11,6 +11,7 @@ declare global {
         id: string;
         role: UserRole;
         county?: string;
+        phone?: string;
       };
     }
   }

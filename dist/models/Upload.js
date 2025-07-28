@@ -59,7 +59,7 @@ const uploadSchema = new mongoose_1.Schema({
             required: true,
             refPath: 'related_to.type'
         }
-    },
+    }, // Use 'as any' to bypass type incompatibility
     created_at: {
         type: Date,
         default: Date.now

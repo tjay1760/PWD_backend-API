@@ -178,7 +178,7 @@ export const getUserById = async (
   try {
     const userId = req.params?.userId;
     // Validate MongoDB ID
-    
+
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: "Invalid user ID" });
     }
@@ -188,8 +188,9 @@ export const getUserById = async (
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    // Restrict sensitive information based on role
-    const userResponse = {
+
+    // Initialize userResponse with common fields
+    const userResponse: any = { // Use 'any' or define a proper type for userResponse
       id: user._id,
       email: user.contact.email, // Always include email for admin and county director
       phone: user.contact.phone, // Always include phone for admin and county director
@@ -206,20 +207,21 @@ export const getUserById = async (
       status: user.status,
     };
 
-    // Add role-specific fields
+    // // CONDITIONAL ADDITION of assessment stats (Corrected Placement)
+    // if (user.role === 'medical_officer' || user.role === 'county_director') {
+    //   userResponse.assessmentStats = user.assessment_stats;
+    // }
+
+
+    // Add role-specific fields (this existing block is already correctly placed)
     if (
       req.user?.role === "admin" ||
       req.user?.role === "county_director" ||
       req.user?.id === userId
     ) {
       Object.assign(userResponse, {
-        email: user.contact.email,
-        phone: user.contact.phone,
-        nationalId: user.national_id_or_passport,
-        dob: user.dob,
-        maritalStatus: user.marital_status,
-        occupation: user.occupation,
-        educationDetails: user.education_details,
+        occupation: user.occupation, // Was missing from initial userResponse
+        educationDetails: user.education_details, // Was missing from initial userResponse
         createdAt: user.created_at,
       });
 

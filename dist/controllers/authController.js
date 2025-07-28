@@ -23,7 +23,7 @@ exports.registerValidation = [
     (0, express_validator_1.body)('county').notEmpty().withMessage('County is required'),
     (0, express_validator_1.body)('subCounty').notEmpty().withMessage('Sub-county is required'),
     (0, express_validator_1.body)('role')
-        .isIn(['pwd', 'guardian', 'medical_officer', 'county_director', 'admin'])
+        .isIn(['pwd', 'guardian', 'medical_officer', 'county_director', 'medical_approver', 'admin'])
         .withMessage('Invalid role')
 ];
 exports.loginValidation = [
@@ -45,7 +45,7 @@ exports.changePasswordValidation = [
  */
 const register = async (req, res) => {
     try {
-        const { firstName, middleName, lastName, email, nationalId, birthCertificateNumber, gender, dob, phone, maritalStatus, occupation, educationDetails, county, subCounty, role, password, nextOfKin, medicalInfo, directorInfo } = req.body;
+        const { firstName, middleName, lastName, email, nationalId, birthCertificateNumber, gender, dob, phone, maritalStatus, occupation, educationDetails, county, subCounty, role, password, nextOfKin, medicalLicenceNumber, speciality, countyOfPractice, medicalFacility, directorInfo } = req.body;
         // Check if user already exists
         const existingUser = await User_1.default.findOne({
             $or: [
@@ -90,9 +90,9 @@ const register = async (req, res) => {
         }
         if (role === 'medical_officer') {
             userData.medical_info = {
-                license_number: medicalInfo?.licenseNumber,
-                specialty: medicalInfo?.specialty,
-                county_of_practice: county,
+                license_number: medicalLicenceNumber,
+                specialty: speciality,
+                county_of_practice: countyOfPractice,
                 approved_by_director: false
             };
         }

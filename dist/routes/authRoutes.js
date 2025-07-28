@@ -22,5 +22,3 @@ router.post('/reset-password', (0, validation_1.validate)(authController_1.reset
 // Change password (for logged in user)
 router.post('/change-password', auth_1.authenticate, (0, validation_1.validate)(authController_1.changePasswordValidation), (0, audit_1.auditLog)('password_change'), authController_1.changePassword);
 exports.default = router;
-/boltAction type="file" filePath="src/routes / authRoutes.ts;
-">;

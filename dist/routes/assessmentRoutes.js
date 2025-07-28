@@ -12,13 +12,19 @@ const router = express_1.default.Router();
 // Book a medical assessment
 router.post('/book', auth_1.authenticate, (0, auth_1.authorize)(['pwd', 'guardian']), (0, validation_1.validate)(assessmentController_1.bookAssessmentValidation), (0, audit_1.auditLog)('book_assessment'), assessmentController_1.bookAssessment);
 // View assessment status for a PWD
-router.get('/status/:pwdId', auth_1.authenticate, auth_1.restrictToCounty, assessmentController_1.getAssessmentStatus);
+router.get('/status/:pwdId', auth_1.authenticate, (req, res, next) => {
+    console.log(`User ${req.user?.id} accessing assessment status`);
+    next();
+}, auth_1.restrictToCounty, assessmentController_1.getAssessmentStatus);
 // View assessments assigned to a medical officer
-router.get('/assigned', auth_1.authenticate, (0, auth_1.authorize)(['medical_officer']), assessmentController_1.getAssignedAssessments);
+router.get('/assigned', auth_1.authenticate, (0, auth_1.authorize)(['medical_officer', 'county_director']), assessmentController_1.getAssignedAssessments);
+router.get('/pending-approvals', auth_1.authenticate, (0, auth_1.authorize)(['medical_approver']), assessmentController_1.getPendingApprovals);
+// Get all assessments by county (for county director)
+router.get('/county', auth_1.authenticate, (0, auth_1.authorize)(['county_director']), assessmentController_1.getAllAssessmentsByCounty);
 // Submit assessment by medical officer
 router.post('/submit/:assessmentId', auth_1.authenticate, (0, auth_1.authorize)(['medical_officer']), (0, validation_1.validate)(assessmentController_1.submitAssessmentValidation), (0, audit_1.auditLog)('submit_assessment'), assessmentController_1.submitAssessment);
 // Review assessment by medical officer
-router.put('/review/:assessmentId', auth_1.authenticate, (0, auth_1.authorize)(['medical_officer']), (0, validation_1.validate)(assessmentController_1.reviewAssessmentValidation), (0, audit_1.auditLog)('review_assessment'), assessmentController_1.reviewAssessment);
+router.put('/review/:assessmentId', auth_1.authenticate, (0, auth_1.authorize)(['medical_approver']), (0, validation_1.validate)(assessmentController_1.reviewAssessmentValidation), (0, audit_1.auditLog)('review_assessment'), assessmentController_1.reviewAssessment);
 // Finalize assessment by county director
 router.put('/finalize/:assessmentId', auth_1.authenticate, (0, auth_1.authorize)(['county_director']), auth_1.restrictToCounty, (0, audit_1.auditLog)('finalize_assessment'), assessmentController_1.finalizeAssessment);
 // Get assessment report

@@ -10,19 +10,19 @@ const AuthToken_1 = __importDefault(require("../models/AuthToken"));
 const ACCESS_TOKEN_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_here';
 const REFRESH_TOKEN_SECRET = `${ACCESS_TOKEN_SECRET}_refresh`;
 // Token expiration
-const ACCESS_TOKEN_EXPIRATION = process.env.JWT_ACCESS_EXPIRATION || '15m';
-const REFRESH_TOKEN_EXPIRATION = process.env.JWT_REFRESH_EXPIRATION || '7d';
+const ACCESS_TOKEN_EXPIRATION = ms(process.env.JWT_ACCESS_EXPIRATION || '15m') / 1000; // Convert to seconds
+const REFRESH_TOKEN_EXPIRATION = ms(process.env.JWT_REFRESH_EXPIRATION || '7d') / 1000; // Convert to seconds
 // Generate tokens
 const generateAccessToken = (user) => {
     return jsonwebtoken_1.default.sign({
         id: user._id,
         role: user.role,
         county: user.county
-    }, ACCESS_TOKEN_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRATION });
+    }, ACCESS_TOKEN_SECRET, { expiresIn: Math.floor(ACCESS_TOKEN_EXPIRATION) });
 };
 exports.generateAccessToken = generateAccessToken;
 const generateRefreshToken = (user) => {
-    return jsonwebtoken_1.default.sign({ id: user._id }, REFRESH_TOKEN_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRATION });
+    return jsonwebtoken_1.default.sign({ id: user._id }, REFRESH_TOKEN_SECRET, { expiresIn: Math.floor(REFRESH_TOKEN_EXPIRATION) });
 };
 exports.generateRefreshToken = generateRefreshToken;
 // Save token to database

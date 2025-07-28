@@ -33,6 +33,7 @@ const authenticate = async (req, res, next) => {
             role: decoded.role,
             county: decoded.county
         };
+        console.log(`User ${req.user.id} authenticated with role ${req.user.role}`);
         next();
     }
     catch (error) {
@@ -50,10 +51,12 @@ const authorize = (roles) => {
             return res.status(401).json({ message: 'Authentication required' });
         }
         if (!roles.includes(req.user.role)) {
+            console.warn(`Unauthorized access attempt by user ${req.user.id} with role ${req.user.role}`);
             return res.status(403).json({
                 message: 'You do not have permission to access this resource'
             });
         }
+        console.log(`User ${req.user.id} with role ${req.user.role} authorized for this route`);
         next();
     };
 };
@@ -64,6 +67,7 @@ exports.authorize = authorize;
  */
 const restrictToCounty = async (req, res, next) => {
     try {
+        console.log(`Checking county access for user ${req.user?.id}`);
         if (!req.user) {
             return res.status(401).json({ message: 'Authentication required' });
         }

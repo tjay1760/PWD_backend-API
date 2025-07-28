@@ -16,10 +16,18 @@ const validate = (validations) => {
             return next();
         }
         // Format validation errors
-        const formattedErrors = errors.array().map(error => ({
-            field: error.param,
-            message: error.msg
-        }));
+        const formattedErrors = errors.array().map((error) => {
+            if ('param' in error) {
+                return {
+                    field: error.param,
+                    message: error.msg
+                };
+            }
+            return {
+                field: 'unknown',
+                message: error.msg
+            };
+        });
         return res.status(400).json({
             message: 'Validation failed',
             errors: formattedErrors
